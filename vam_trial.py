@@ -4,69 +4,84 @@ import sys
 import scipy
 ##########################
 
+def max_value_in_matrix(X):
+    final_ans=0
+    for i in range(len(X)):
+        for j in range(len(X[i])):
+            if(X[i][j]!=0):
+                final_ans+=X[i][j]*another_costs[i][j]
+    return final_ans
+
 def look_for_trend(row_present_size, column_present_size, another_matrix):
     another_matrix = another_matrix.copy()
-    rows, cols = [0]*row_present_size, [0]*column_present_size
-    for i, j in another_matrix:
-        rows[i] += 1
-        cols[j] += 1
+    present_row = [0]*row_present_size
+    present_colum =[0]*column_present_size
+    for ind_i, ind_j in another_matrix:
+        present_row[ind_i] += 1
+        present_colum[ind_j] += 1
     while True:
-        is_ex = True
+        bool_value = True
         for k in range(row_present_size):
-            if rows[k] == 1:
-                is_ex = False
-                for i, j in another_matrix:
-                    if i == k:
-                        cols[j] -= 1
-                        rows[i] = 0
-                        another_matrix.remove((i, j))
+            if present_row[k] == 1:
+                bool_value = False
+                for ind_i, ind_j in another_matrix:
+                    if ind_i == k:
+                        present_colum[ind_j] -= 1
+                        present_row[ind_i] = 0
+                        another_matrix.remove((ind_i, ind_j))
                         break
         for k in range(column_present_size):
-            if cols[k] == 1:
-                is_ex = False
-                for i, j in another_matrix:
-                    if j == k:
-                        rows[i] -= 1
-                        cols[j] = 0
-                        another_matrix.remove((i, j))
+            if present_colum[k] == 1:
+                bool_value = False
+                for ind_i, ind_j in another_matrix:
+                    if ind_j == k:
+                        present_row[ind_i] -= 1
+                        present_colum[ind_j] = 0
+                        another_matrix.remove((ind_i, ind_j))
                         break
-        if is_ex:
+        if bool_value:
             return another_matrix
         if len(another_matrix) < 4:
             return None
 
 
-def search_possible(C, another_matrix):
-    inf = float('inf')
-    u = [inf]*len(C)
-    v = [inf]*len(C[0])
-    u[0] = 0
+def search_possible(TP_matrix, another_matrix):
+    infinite_value = float('inf')
+    u_matrix_tp = [infinite_value]*len(TP_matrix)
+    v_matrix_tp = [infinite_value]*len(TP_matrix[0])
+    u_matrix_tp[0] = 0
     for _ in range(len(another_matrix)):
-        for i, j in another_matrix:
-            if v[j] == inf and u[i] != inf:
-                v[j] = C[i][j] - u[i]
+        for i, ind_j in another_matrix:
+            if v_matrix_tp[ind_j] == infinite_value and u_matrix_tp[i] != infinite_value:
+                #print(v_matrix_tp)
+                #print(u_matrix_tp)
+                v_matrix_tp[ind_j] = TP_matrix[i][ind_j] - u_matrix_tp[i]
                 break
-            elif u[i] == inf and v[j] != inf:
-                u[i] = C[i][j] - v[j]
+            elif u_matrix_tp[i] == infinite_value and v_matrix_tp[ind_j] != infinite_value:
+                u_matrix_tp[i] = TP_matrix[i][ind_j] - v_matrix_tp[ind_j]
+                #print(v_matrix_tp)
+                #print(u_matrix_tp)
                 break
-    return u, v
+    #print(v_matrix_tp)
+    #print(u_matrix_tp)
+    return u_matrix_tp, v_matrix_tp
 
 
-def break_trend(i0, j0, cycle):
-    neg, pos = set(), set()
-    pos.add((i0, j0))
-    for _ in range(len(cycle) >> 1):
-        for i, j in cycle:
-            if i == i0 and j != j0:
+def break_trend(index_0, index_J_0, matrix_possible_cycle):
+    negative_set, positive_set = set(), set()
+    positive_set.add((index_0, index_J_0))
+    for _ in range(len(matrix_possible_cycle) >> 1):
+        for i, j in matrix_possible_cycle:
+            if i == index_0 and j != index_J_0:
                 neg_i, neg_j = i, j
                 break
-        neg.add((neg_i, neg_j))
-        for i, j in cycle:
+        negative_set.add((neg_i, neg_j))
+        for i, j in matrix_possible_cycle:
             if j == neg_j and i != neg_i:
-                i0, j0 = i, j
+                index_0, index_J_0 = i, j
                 break
-        pos.add((i0, j0))
-    return neg, pos
+        positive_set.add((index_0, index_J_0))
+    return negative_set, positive_set
 
 
 def answer_matrix(a, b, C,X,basis,no_basis):
@@ -87,20 +102,20 @@ def answer_matrix(a, b, C,X,basis,no_basis):
 
     while True:
         u, v = search_possible(C, basis)
-        i0, j0 = min(no_basis, key=lambda x: C[x[0]][x[1]]-u[x[0]]-v[x[1]])
-        min_delta = C[i0][j0]-u[i0]-v[j0]
+        index_0, index_J_0 = min(no_basis, key=lambda x: C[x[0]][x[1]]-u[x[0]]-v[x[1]])
+        min_delta = C[index_0][index_J_0]-u[index_0]-v[index_J_0]
         if min_delta >= 0:
             return X
 
-        basis.add((i0, j0))
-        no_basis.remove((i0, j0))
-        cycle = look_for_trend(m, n, basis)
-        neg, pos = break_trend(i0, j0, cycle)
-        i_star, j_star = min(neg, key=lambda el: X[el[0]][el[1]])
+        basis.add((index_0, index_J_0))
+        no_basis.remove((index_0, index_J_0))
+        matrix_possible_cycle = look_for_trend(m, n, basis)
+        negative_set, positive_set = break_trend(index_0, index_J_0, matrix_possible_cycle)
+        i_star, j_star = min(negative_set, key=lambda el: X[el[0]][el[1]])
         theta = X[i_star][j_star]
-        for el in pos:
+        for el in positive_set:
             X[el[0]][el[1]] += theta
-        for el in neg:
+        for el in negative_set:
             X[el[0]][el[1]] -= theta
         basis.remove((i_star, j_star))
         no_basis.add((i_star, j_star))
