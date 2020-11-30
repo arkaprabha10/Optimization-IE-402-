@@ -51,14 +51,14 @@ def search_possible(TP_matrix, another_matrix):
     v_matrix_tp = [infinite_value]*len(TP_matrix[0])
     u_matrix_tp[0] = 0
     for _ in range(len(another_matrix)):
-        for i, ind_j in another_matrix:
-            if v_matrix_tp[ind_j] == infinite_value and u_matrix_tp[i] != infinite_value:
+        for ind_i, ind_j in another_matrix:
+            if v_matrix_tp[ind_j] == infinite_value and u_matrix_tp[ind_i] != infinite_value:
                 #print(v_matrix_tp)
                 #print(u_matrix_tp)
-                v_matrix_tp[ind_j] = TP_matrix[i][ind_j] - u_matrix_tp[i]
+                v_matrix_tp[ind_j] = TP_matrix[ind_i][ind_j] - u_matrix_tp[ind_i]
                 break
-            elif u_matrix_tp[i] == infinite_value and v_matrix_tp[ind_j] != infinite_value:
-                u_matrix_tp[i] = TP_matrix[i][ind_j] - v_matrix_tp[ind_j]
+            elif u_matrix_tp[ind_i] == infinite_value and v_matrix_tp[ind_j] != infinite_value:
+                u_matrix_tp[ind_i] = TP_matrix[ind_i][ind_j] - v_matrix_tp[ind_j]
                 #print(v_matrix_tp)
                 #print(u_matrix_tp)
                 break
@@ -68,57 +68,60 @@ def search_possible(TP_matrix, another_matrix):
 
 
 def break_trend(index_0, index_J_0, matrix_possible_cycle):
-    negative_set, positive_set = set(), set()
+    negative_set = set()
+    positive_set = set()
     positive_set.add((index_0, index_J_0))
     for _ in range(len(matrix_possible_cycle) >> 1):
-        for i, j in matrix_possible_cycle:
-            if i == index_0 and j != index_J_0:
-                neg_i, neg_j = i, j
+        for ind_i, ind_j in matrix_possible_cycle:
+            if ind_i == index_0 and ind_j != index_J_0:
+                neg_i= ind_i
+                neg_j = ind_j
                 break
         negative_set.add((neg_i, neg_j))
-        for i, j in matrix_possible_cycle:
-            if j == neg_j and i != neg_i:
-                index_0, index_J_0 = i, j
+        for ind_i, ind_j in matrix_possible_cycle:
+            if ind_j == neg_j and ind_i != neg_i:
+                index_0= ind_i
+                index_J_0 = ind_j
                 break
         positive_set.add((index_0, index_J_0))
     return negative_set, positive_set
 
 
-def answer_matrix(a, b, C,X,basis,no_basis):
-    m, n = len(a), len(b)
-    diff = sum(a) - sum(b)
-    if diff < 0:
-        a.append(abs(diff))
-        m += 1
-        C.append([0 for _ in range(n)])
-    elif diff > 0:
-        b.append(diff)
-        n += 1
-        for row in C:
-            row.append(0)
+def answer_matrix(matrix_supply, matrix_demand, cost_matrix,Final_cost_matrix,present_in_basis,not_present_in_basis):
+    length_1, length_2 = len(matrix_supply), len(matrix_demand)
+    length_difference = sum(matrix_supply) - sum(matrix_demand)
+    if length_difference < 0:
+        matrix_supply.append(abs(length_difference))
+        length_1 += 1
+        cost_matrix.append([0 for _ in range(length_2)])
+    elif length_difference > 0:
+        matrix_demand.append(length_difference)
+        length_2 += 1
+        for row_present in cost_matrix:
+            row_present.append(0)
     
-    if len(no_basis) == 0:
-        return X
+    if len(not_present_in_basis) == 0:
+        return Final_cost_matrix
 
-    while True:
-        u, v = search_possible(C, basis)
-        index_0, index_J_0 = min(no_basis, key=lambda x: C[x[0]][x[1]]-u[x[0]]-v[x[1]])
-        min_delta = C[index_0][index_J_0]-u[index_0]-v[index_J_0]
-        if min_delta >= 0:
-            return X
+    while 0!=1:
+        matrix_u_tp, matrix_v_tp = search_possible(cost_matrix, present_in_basis)
+        index_0, index_J_0 = min(not_present_in_basis, key=lambda x: cost_matrix[x[0]][x[1]]-matrix_u_tp[x[0]]-matrix_v_tp[x[1]])
+        d_least_value = cost_matrix[index_0][index_J_0]-matrix_u_tp[index_0]-matrix_v_tp[index_J_0]
+        if d_least_value >= 0:
+            return Final_cost_matrix
 
-        basis.add((index_0, index_J_0))
-        no_basis.remove((index_0, index_J_0))
-        matrix_possible_cycle = look_for_trend(m, n, basis)
+        present_in_basis.add((index_0, index_J_0))
+        not_present_in_basis.remove((index_0, index_J_0))
+        matrix_possible_cycle = look_for_trend(length_1, length_2, present_in_basis)
         negative_set, positive_set = break_trend(index_0, index_J_0, matrix_possible_cycle)
-        i_star, j_star = min(negative_set, key=lambda el: X[el[0]][el[1]])
-        theta = X[i_star][j_star]
-        for el in positive_set:
-            X[el[0]][el[1]] += theta
-        for el in negative_set:
-            X[el[0]][el[1]] -= theta
-        basis.remove((i_star, j_star))
-        no_basis.add((i_star, j_star))
+        special_i_value, special_j_value = min(negative_set, key=lambda el: Final_cost_matrix[el[0]][el[1]])
+        theta = Final_cost_matrix[special_i_value][special_j_value]
+        for value in positive_set:
+            Final_cost_matrix[value[0]][value[1]] += theta
+        for value in negative_set:
+            Final_cost_matrix[value[0]][value[1]] -= theta
+        present_in_basis.remove((special_i_value, special_j_value))
+        not_present_in_basis.add((special_i_value, special_j_value))
 
 #############################
 
@@ -176,69 +179,69 @@ current_demand_tp={}
 another_demand=[]
 temp_list=input().split(' ')
 i=0
-for i in range(int(c)):
-    current_demand_tp[col_ind[i]]=int(temp_list[i])
-    another_demand.append(int(temp_list[i]))
+for ind1 in range(int(c)):
+    current_demand_tp[col_ind[ind1]]=int(temp_list[ind1])
+    another_demand.append(int(temp_list[ind1]))
 temp_list.clear()
-cols = sorted(current_demand_tp.keys())
+arranged_column = sorted(current_demand_tp.keys())
 
-res = dict((k, defaultdict(int)) for k in current_net_cost_matrix)
-g = {}
-for x in current_supply_tp:
-    g[x] = sorted(current_net_cost_matrix[x].keys(), key=lambda g: current_net_cost_matrix[x][g])
-for x in current_demand_tp:
-    g[x] = sorted(current_net_cost_matrix.keys(), key=lambda g: current_net_cost_matrix[g][x])
+new_dict_modify = dict((val, defaultdict(int)) for val in current_net_cost_matrix)
+matrix_use_to_modify = {}
+for ind1 in current_supply_tp:
+    matrix_use_to_modify[ind1] = sorted(current_net_cost_matrix[ind1].keys(), key=lambda matrix_use_to_modify: current_net_cost_matrix[ind1][matrix_use_to_modify])
+for ind1 in current_demand_tp:
+    matrix_use_to_modify[ind1] = sorted(current_net_cost_matrix.keys(), key=lambda matrix_use_to_modify: current_net_cost_matrix[matrix_use_to_modify][ind1])
  
-while g:
-    d = {}
+while matrix_use_to_modify:
+    dict_use_1 = {}
     for x in current_demand_tp:
-        d[x] = (current_net_cost_matrix[g[x][1]][x] - current_net_cost_matrix[g[x][0]][x]) if len(g[x]) > 1 else current_net_cost_matrix[g[x][0]][x]
-    s = {}
+        dict_use_1[x] = (current_net_cost_matrix[matrix_use_to_modify[x][1]][x] - current_net_cost_matrix[matrix_use_to_modify[x][0]][x]) if len(matrix_use_to_modify[x]) > 1 else current_net_cost_matrix[matrix_use_to_modify[x][0]][x]
+    dict_use_2 = {}
     for x in current_supply_tp:
-        s[x] = (current_net_cost_matrix[x][g[x][1]] - current_net_cost_matrix[x][g[x][0]]) if len(g[x]) > 1 else current_net_cost_matrix[x][g[x][0]]
-    f = max(d, key=lambda n: d[n])
-    t = max(s, key=lambda n: s[n])
-    t, f = (f, g[f][0]) if d[f] > s[t] else (g[t][0], t)
-    v = min(current_supply_tp[f], current_demand_tp[t])
-    res[f][t] += v
-    current_demand_tp[t] -= v
-    if current_demand_tp[t] == 0:
-        for k, n in current_supply_tp.items():
-            if n != 0:
-                g[k].remove(t)
-        del g[t]
-        del current_demand_tp[t]
-    current_supply_tp[f] -= v
-    if current_supply_tp[f] == 0:
-        for k, n in current_demand_tp.items():
-            if n != 0:
-                g[k].remove(f)
-        del g[f]
-        del current_supply_tp[f]
+        dict_use_2[x] = (current_net_cost_matrix[x][matrix_use_to_modify[x][1]] - current_net_cost_matrix[x][matrix_use_to_modify[x][0]]) if len(matrix_use_to_modify[x]) > 1 else current_net_cost_matrix[x][matrix_use_to_modify[x][0]]
+    max_value = max(dict_use_1, key=lambda val1: dict_use_1[val1])
+    max_value_2 = max(dict_use_2, key=lambda val1: dict_use_2[val1])
+    max_value_2, max_value = (max_value, matrix_use_to_modify[max_value][0]) if dict_use_1[max_value] > dict_use_2[max_value_2] else (matrix_use_to_modify[max_value_2][0], max_value_2)
+    min_val_1 = min(current_supply_tp[max_value], current_demand_tp[max_value_2])
+    new_dict_modify[max_value][max_value_2] += min_val_1
+    current_demand_tp[max_value_2] -= min_val_1
+    if current_demand_tp[max_value_2] == 0:
+        for ind1, ind2 in current_supply_tp.items():
+            if ind2 != 0:
+                matrix_use_to_modify[ind1].remove(max_value_2)
+        del matrix_use_to_modify[max_value_2]
+        del current_demand_tp[max_value_2]
+    current_supply_tp[max_value] -= min_val_1
+    if current_supply_tp[max_value] == 0:
+        for ind1, ind2 in current_demand_tp.items():
+            if ind2 != 0:
+                matrix_use_to_modify[ind1].remove(max_value)
+        del matrix_use_to_modify[max_value]
+        del current_supply_tp[max_value]
 basis_check=[]
 cost_final_matrix=[]
-basis = set()
-no_basis=set()
+present_in_basis = set()
+not_present_in_basis=set()
 
 print("\n")
 print("Initial bfs:")
 cost = 0
-for g in sorted(current_net_cost_matrix):
+for index_1 in sorted(current_net_cost_matrix):
     trial=[]
     temp_matrix=[]
-    for n in cols:
+    for n in arranged_column:
         trial=[]
-        y = res[g][n]
-        temp_matrix.append(int(y))
-        if y != 0:
-            trial.append(int(g[-1])-1)
+        val_check = new_dict_modify[index_1][n]
+        temp_matrix.append(int(val_check))
+        if val_check != 0:
+            trial.append(int(index_1[-1])-1)
             trial.append(int(n[-1])-1)
-            basis.add((int(g[-1])-1, int(n[-1])-1))
+            present_in_basis.add((int(index_1[-1])-1, int(n[-1])-1))
             basis_check.append(trial)
-            print ("x"+str(int(g[-1]))+str(int(n[-1]))+"="+str(y)+",",end=" ")
+            print ("x"+str(int(index_1[-1]))+str(int(n[-1]))+"="+str(val_check)+",",end=" ")
         else:
-            no_basis.add((int(g[-1])-1, int(n[-1])-1))
-        cost += y * current_net_cost_matrix[g][n]
+            not_present_in_basis.add((int(index_1[-1])-1, int(n[-1])-1))
+        cost += val_check * current_net_cost_matrix[index_1][n]
     cost_final_matrix.append(temp_matrix)
 
 print ("\nCost = ", cost)
@@ -246,15 +249,15 @@ print ("\nCost = ", cost)
 # print("Final Matrix is :")
 # print(cost_final_matrix)
 # print(basis)
-# print(no_basis)
+# print(not_present_in_basis)
 print("Optimal Solution:",end=" ") 
-X = answer_matrix(another_supply, another_demand, another_costs,cost_final_matrix,basis,no_basis)
+final_matrix = answer_matrix(another_supply, another_demand, another_costs,cost_final_matrix,present_in_basis,not_present_in_basis)
 final_ans=0;
-for i in range(len(X)):
-    for j in range(len(X[i])):
-        if(X[i][j]!=0):
-            print("x"+str(i+1)+str(j+1)+"="+str(X[i][j])+",",end=" ")
-        final_ans+=X[i][j]*another_costs[i][j]
+for i in range(len(final_matrix)):
+    for j in range(len(final_matrix[i])):
+        if(final_matrix[i][j]!=0):
+            print("x"+str(i+1)+str(j+1)+"="+str(final_matrix[i][j])+",",end=" ")
+        final_ans+=final_matrix[i][j]*another_costs[i][j]
 print("\n")
 print("Optimal Cost: "+ str(final_ans))
 
