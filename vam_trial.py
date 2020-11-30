@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy
 import sys
-
+import scipy
 ##########################
 
 def find_cycle(m, n, basis):
@@ -238,9 +238,17 @@ print(basis)
 print(no_basis)
  
 X = solve(another_supply, another_demand, another_costs,cost_final_matrix,basis,no_basis)
+final_ans=0;
+for i in range(len(X)):
+    for j in range(len(X[i])):
+        final_ans+=X[i][j]*another_costs[i][j]
+# for row_index, row in enumerate(X):
+#     for col_index, item in enumerate(X):
+#         final_ans+=X[row_index][col_index]*another_costs[row_index][col_index]     
+        
 for row in X[:int(r)]:
     print(*row[:int(c)])
-    
+print(final_ans)
 
 
 
