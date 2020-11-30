@@ -172,6 +172,7 @@ for i in range(int(r)):
     another_supply.append(int(temp_list[i]))
 temp_list.clear()
 
+
 #current_demand_tp = {'A': 30, 'B': 20, 'C': 70, 'D': 30, 'E': 60}
 #current_demand_tp = {'A': 250, 'B': 350, 'C': 400, 'D': 200}
 
@@ -245,11 +246,23 @@ for index_1 in sorted(current_net_cost_matrix):
     cost_final_matrix.append(temp_matrix)
 
 print ("\nCost = ", cost)
+
+if len(present_in_basis)!=len(another_supply)+len(another_demand)-1:
+    temp_val=abs(len(present_in_basis)-(len(another_supply)+len(another_demand)-1))
+    while temp_val>0:
+       to_be_added=min(not_present_in_basis)
+       present_in_basis.add(to_be_added)
+       not_present_in_basis.remove(to_be_added)
+       temp_val=temp_val-1
+       
+#print(len(present_in_basis))       
 #print(basis_check)
 # print("Final Matrix is :")
 # print(cost_final_matrix)
 # print(basis)
 # print(not_present_in_basis)
+
+
 print("Optimal Solution:",end=" ") 
 final_matrix = answer_matrix(another_supply, another_demand, another_costs,cost_final_matrix,present_in_basis,not_present_in_basis)
 final_ans=0;
