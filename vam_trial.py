@@ -4,45 +4,45 @@ import sys
 import scipy
 ##########################
 
-def find_cycle(m, n, basis):
-    basis = basis.copy()
-    rows, cols = [0]*m, [0]*n
-    for i, j in basis:
+def look_for_trend(row_present_size, column_present_size, another_matrix):
+    another_matrix = another_matrix.copy()
+    rows, cols = [0]*row_present_size, [0]*column_present_size
+    for i, j in another_matrix:
         rows[i] += 1
         cols[j] += 1
     while True:
         is_ex = True
-        for k in range(m):
+        for k in range(row_present_size):
             if rows[k] == 1:
                 is_ex = False
-                for i, j in basis:
+                for i, j in another_matrix:
                     if i == k:
                         cols[j] -= 1
                         rows[i] = 0
-                        basis.remove((i, j))
+                        another_matrix.remove((i, j))
                         break
-        for k in range(n):
+        for k in range(column_present_size):
             if cols[k] == 1:
                 is_ex = False
-                for i, j in basis:
+                for i, j in another_matrix:
                     if j == k:
                         rows[i] -= 1
                         cols[j] = 0
-                        basis.remove((i, j))
+                        another_matrix.remove((i, j))
                         break
         if is_ex:
-            return basis
-        if len(basis) < 4:
+            return another_matrix
+        if len(another_matrix) < 4:
             return None
 
 
-def find_potentials(C, basis):
+def search_possible(C, another_matrix):
     inf = float('inf')
     u = [inf]*len(C)
     v = [inf]*len(C[0])
     u[0] = 0
-    for _ in range(len(basis)):
-        for i, j in basis:
+    for _ in range(len(another_matrix)):
+        for i, j in another_matrix:
             if v[j] == inf and u[i] != inf:
                 v[j] = C[i][j] - u[i]
                 break
@@ -52,7 +52,7 @@ def find_potentials(C, basis):
     return u, v
 
 
-def split_cycle(i0, j0, cycle):
+def break_trend(i0, j0, cycle):
     neg, pos = set(), set()
     pos.add((i0, j0))
     for _ in range(len(cycle) >> 1):
@@ -69,7 +69,7 @@ def split_cycle(i0, j0, cycle):
     return neg, pos
 
 
-def solve(a, b, C,X,basis,no_basis):
+def answer_matrix(a, b, C,X,basis,no_basis):
     m, n = len(a), len(b)
     diff = sum(a) - sum(b)
     if diff < 0:
@@ -86,7 +86,7 @@ def solve(a, b, C,X,basis,no_basis):
         return X
 
     while True:
-        u, v = find_potentials(C, basis)
+        u, v = search_possible(C, basis)
         i0, j0 = min(no_basis, key=lambda x: C[x[0]][x[1]]-u[x[0]]-v[x[1]])
         min_delta = C[i0][j0]-u[i0]-v[j0]
         if min_delta >= 0:
@@ -94,8 +94,8 @@ def solve(a, b, C,X,basis,no_basis):
 
         basis.add((i0, j0))
         no_basis.remove((i0, j0))
-        cycle = find_cycle(m, n, basis)
-        neg, pos = split_cycle(i0, j0, cycle)
+        cycle = look_for_trend(m, n, basis)
+        neg, pos = break_trend(i0, j0, cycle)
         i_star, j_star = min(neg, key=lambda el: X[el[0]][el[1]])
         theta = X[i_star][j_star]
         for el in pos:
@@ -205,14 +205,12 @@ cost_final_matrix=[]
 basis = set()
 no_basis=set()
 
-for n in cols:
-    print ("\t", n,end="")
 print("\n")
+print("Initial bfs:")
 cost = 0
 for g in sorted(current_net_cost_matrix):
     trial=[]
     temp_matrix=[]
-    print (g, "\t",end="")
     for n in cols:
         trial=[]
         y = res[g][n]
@@ -222,33 +220,28 @@ for g in sorted(current_net_cost_matrix):
             trial.append(int(n[-1])-1)
             basis.add((int(g[-1])-1, int(n[-1])-1))
             basis_check.append(trial)
-            print (y,end=" ")
+            print ("x"+str(int(g[-1]))+str(int(n[-1]))+"="+str(y)+",",end=" ")
         else:
             no_basis.add((int(g[-1])-1, int(n[-1])-1))
         cost += y * current_net_cost_matrix[g][n]
-        print ("\t",end="")
-    print("\n")
     cost_final_matrix.append(temp_matrix)
 
-print ("\n\nTotal Cost = ", cost)
-print(basis_check)
+print ("\nCost = ", cost)
+#print(basis_check)
 # print("Final Matrix is :")
 # print(cost_final_matrix)
-print(basis)
-print(no_basis)
- 
-X = solve(another_supply, another_demand, another_costs,cost_final_matrix,basis,no_basis)
+# print(basis)
+# print(no_basis)
+print("Optimal Solution:",end=" ") 
+X = answer_matrix(another_supply, another_demand, another_costs,cost_final_matrix,basis,no_basis)
 final_ans=0;
 for i in range(len(X)):
     for j in range(len(X[i])):
+        if(X[i][j]!=0):
+            print("x"+str(i+1)+str(j+1)+"="+str(X[i][j])+",",end=" ")
         final_ans+=X[i][j]*another_costs[i][j]
-# for row_index, row in enumerate(X):
-#     for col_index, item in enumerate(X):
-#         final_ans+=X[row_index][col_index]*another_costs[row_index][col_index]     
-        
-for row in X[:int(r)]:
-    print(*row[:int(c)])
-print(final_ans)
+print("\n")
+print("Optimal Cost: "+ str(final_ans))
 
 
 
